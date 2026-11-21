@@ -27,7 +27,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          sudo apt update && sudo apt install -y 7zip
+          sudo apt update && sudo apt install -y 7zip exfatprogs parted jq unzip xz-utils
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -45,6 +45,7 @@ jobs:
           echo "==> Creating linux package..."
           cd RetroArch-Linux-x86_64
           zip -qr ../retrogc-data-${{ inputs.version }}-linux.zip .
+          cd .. && rm -rf RetroArch-Linux-x86_64
           echo "<== Linux package created."
 
       - name: Create windows retroarch v${{ inputs.version }} archive
@@ -60,14 +61,46 @@ jobs:
           echo "==> Creating windows package..."
           cd RetroArch-Win64
           zip -qr ../retrogc-data-${{ inputs.version }}-windows.zip .
+          cd .. && rm -rf RetroArch-Win64
           echo "<== Windows package created."
+
+      - name: Checkout retrogc-launcher (image tools)
+        uses: actions/checkout@v6
+        with:
+          repository: retrogc/retrogc-launcher
+          path: retrogc-launcher
+
+      - name: Create installer card v${{ inputs.version }} image
+        run: |
+          VERSION="${{ inputs.version }}"
+          echo "==> Writing local data manifest..."
+          # Points to the archives built above (next to it), not to the release URLs.
+          jq -n --arg v "$VERSION" '
+            def data($f): {name: "retrogc-data", file: $f, url: $f};
+            {
+              default: $v,
+              versions: [{
+                version: $v,
+                platforms: {
+                  "win-x64":   {data: [data("retrogc-data-\($v)-windows.zip")]},
+                  "linux-x64": {data: [data("retrogc-data-\($v)-linux.zip")]}
+                }
+              }]
+            }' > installer-card.rgc
+          cat installer-card.rgc
+          echo "==> Building installer card (latest launcher release, exFAT)..."
+          bash retrogc-launcher/Platforms/Linux/retrogc-image.sh \
+            --build-installer retrogc-installer-$VERSION.img.xz \
+            --data installer-card.rgc
+          echo "<== Installer card created."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
-          name: retrogc-data v${{ inputs.version }}
+          name: retrogc-installer v${{ inputs.version }}
           generate_release_notes: true
           files: |
             retrogc-data-${{ inputs.version }}-linux.zip
             retrogc-data-${{ inputs.version }}-windows.zip
+            retrogc-installer-${{ inputs.version }}.img.xz
