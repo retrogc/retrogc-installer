@@ -20,6 +20,12 @@ installed on Windows and Linux:
 - 💳 the **installer card**: a USB stick image that installs the launcher **and** the data, offline;
 - 📄 [`retrogc-data.rgc`](retrogc-data.rgc): the **manifest** the launcher reads to download the data.
 
+> [!NOTE]
+> 🔲 **MiSTer FPGA** and 🟦 **Recalbox** don't need anything from this repository: they run game
+> cards with their own background script ([MiSTer](https://github.com/retrogc/retrogc-launcher#-mister-fpga),
+> [Recalbox](https://github.com/retrogc/retrogc-launcher#-recalbox)). Recalbox starts the games with
+> its own RetroArch and cores, and simply ignores an installer card that is plugged in.
+
 ## 📥 Downloads
 
 Every [**release**](https://github.com/retrogc/retrogc-installer/releases/latest) is named after the
