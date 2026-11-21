@@ -50,7 +50,7 @@ The simplest way to set up a computer:
 3. **Run** `retrogc-launcher.exe` (Windows) or `retrogc-launcher` (Linux) **from the stick** and click
    **Install**. The launcher installs itself with a menu shortcut, installs RetroArch and its cores,
    then restarts from the installed copy. No internet connection needed.
-4. **Play**: remove the stick and insert a [game card](https://github.com/retrogc/retrogc-gamecards).
+4. **Play**: remove the stick and insert a [game card](https://github.com/retrogc/retrogc-launcher#-the-rgc-card-format).
 
 > [!TIP]
 > Keep the stick: insert it into a computer where the launcher is already installed and it offers
