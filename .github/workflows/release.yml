@@ -27,7 +27,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          sudo apt update && sudo apt install -y 7zip exfatprogs parted jq unzip xz-utils
+          sudo apt update && sudo apt install -y 7zip exfatprogs fdisk jq unzip xz-utils
 
       - name: Checkout
         uses: actions/checkout@v6
