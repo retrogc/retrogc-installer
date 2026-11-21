@@ -9,7 +9,7 @@
             {
               "name": "retrogc-data",
               "file": "retrogc-data-1.22.2-windows.zip",
-              "url": "https://github.com/retrogc/retrogc-data/releases/download/1.22.2/retrogc-data-1.22.2-windows.zip"
+              "url": "https://github.com/retrogc/retrogc-installer/releases/download/1.22.2/retrogc-data-1.22.2-windows.zip"
             }
           ]
         },
@@ -18,7 +18,7 @@
             {
               "name": "retrogc-data",
               "file": "retrogc-data-1.22.2-linux.zip",
-              "url": "https://github.com/retrogc/retrogc-data/releases/download/1.22.2/retrogc-data-1.22.2-linux.zip"
+              "url": "https://github.com/retrogc/retrogc-installer/releases/download/1.22.2/retrogc-data-1.22.2-linux.zip"
             }
           ]
         }
