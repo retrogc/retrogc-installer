@@ -1,10 +1,12 @@
-name: Build Release
+# RetroArch data packages: built rarely (new RetroArch version), tagged with the RetroArch version.
+# The installer card is released separately (installer.yml), following the launcher version.
+name: Build Data
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Retroarch version (e.g. 1.22.2)'
+        description: 'RetroArch version (e.g. 1.22.2)'
         required: true
         type: string
 
@@ -13,9 +15,9 @@ permissions:
 
 jobs:
   build:
-    name: Build Release
+    name: Build Data
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Validate version
         run: |
@@ -27,7 +29,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          sudo apt update && sudo apt install -y 7zip exfatprogs fdisk jq unzip xz-utils
+          sudo apt update && sudo apt install -y 7zip zip
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -64,43 +66,18 @@ jobs:
           cd .. && rm -rf RetroArch-Win64
           echo "<== Windows package created."
 
-      - name: Checkout retrogc-launcher (image tools)
-        uses: actions/checkout@v6
-        with:
-          repository: retrogc/retrogc-launcher
-          path: retrogc-launcher
-
-      - name: Create installer card v${{ inputs.version }} image
-        run: |
-          VERSION="${{ inputs.version }}"
-          echo "==> Writing local data manifest..."
-          # Points to the archives built above (next to it), not to the release URLs.
-          jq -n --arg v "$VERSION" '
-            def data($f): {name: "retrogc-data", file: $f, url: $f};
-            {
-              default: $v,
-              versions: [{
-                version: $v,
-                platforms: {
-                  "win-x64":   {data: [data("retrogc-data-\($v)-windows.zip")]},
-                  "linux-x64": {data: [data("retrogc-data-\($v)-linux.zip")]}
-                }
-              }]
-            }' > installer-card.rgc
-          cat installer-card.rgc
-          echo "==> Building installer card (latest launcher release, exFAT)..."
-          bash retrogc-launcher/Platforms/Linux/retrogc-image.sh \
-            --build-installer retrogc-installer-$VERSION.img.xz \
-            --data installer-card.rgc
-          echo "<== Installer card created."
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
-          name: retrogc-installer v${{ inputs.version }}
-          generate_release_notes: true
+          name: RetroArch data ${{ inputs.version }}
+          # The installer card release (installer.yml) stays "Latest".
+          make_latest: false
+          body: |
+            RetroArch ${{ inputs.version }} and its libretro cores, packed for the Retro Game Card launcher.
+
+            To make the launcher use it, add version `${{ inputs.version }}` to `retrogc-data.rgc` and set it as `default`.
+            Installer cards are released separately, with the launcher version.
           files: |
             retrogc-data-${{ inputs.version }}-linux.zip
             retrogc-data-${{ inputs.version }}-windows.zip
-            retrogc-installer-${{ inputs.version }}.img.xz

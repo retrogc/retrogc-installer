@@ -1,0 +1,83 @@
+# Installer card: released with every launcher release (started by the launcher's release workflow,
+# or by hand), tagged with the launcher version. The data packages are not rebuilt: the card takes
+# the default version of retrogc-data.rgc, downloaded from its data release (data.yml).
+name: Build Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      launcher_version:
+        description: 'Launcher version (e.g. 1.0.7), must be a retrogc-launcher release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Installer
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ inputs.launcher_version }}
+
+    steps:
+      - name: Validate version
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: $VERSION"
+            echo "Version must be in the form X.Y.Z (for example 1.0.7)"
+            exit 1
+          fi
+
+      - name: Install build deps
+        run: |
+          sudo apt update && sudo apt install -y curl exfatprogs fdisk jq unzip xz-utils
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Checkout retrogc-launcher (image tools)
+        uses: actions/checkout@v6
+        with:
+          repository: retrogc/retrogc-launcher
+          path: retrogc-launcher
+
+      - name: Download launcher v${{ inputs.launcher_version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Exactly this release (retrogc-image.sh alone would take the latest one).
+          mkdir -p launcher
+          gh release download "v$VERSION" -R retrogc/retrogc-launcher -D launcher \
+            -p retrogc-launcher-linux.zip -p retrogc-launcher-windows.zip
+          unzip -o -q launcher/retrogc-launcher-linux.zip retrogc-launcher -d launcher
+          unzip -o -q launcher/retrogc-launcher-windows.zip retrogc-launcher.exe -d launcher
+          ls -l launcher
+
+      - name: Create installer card
+        run: |
+          DATA_VERSION="$(jq -er .default retrogc-data.rgc)"
+          echo "DATA_VERSION=$DATA_VERSION" >> "$GITHUB_ENV"
+          echo "==> Building installer card: launcher $VERSION, data $DATA_VERSION (online manifest)..."
+          # No --data: the data archives are downloaded from the URLs of the online manifest.
+          bash retrogc-launcher/Platforms/Linux/retrogc-image.sh \
+            --build-installer "retrogc-installer-$VERSION.img.xz" \
+            --launcher-linux launcher/retrogc-launcher \
+            --launcher-windows launcher/retrogc-launcher.exe \
+            --launcher-version "$VERSION"
+          echo "<== Installer card created."
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.launcher_version }}
+          name: retrogc-installer v${{ inputs.launcher_version }}
+          make_latest: true
+          body: |
+            Installer card for [Retro Game Card launcher v${{ inputs.launcher_version }}](https://github.com/retrogc/retrogc-launcher/releases/tag/v${{ inputs.launcher_version }}), with RetroArch data ${{ env.DATA_VERSION }}.
+
+            Flash `retrogc-installer-${{ inputs.launcher_version }}.img.xz` to a USB stick of 2 GB or more, then run the launcher from the stick.
+          files: |
+            retrogc-installer-${{ inputs.launcher_version }}.img.xz

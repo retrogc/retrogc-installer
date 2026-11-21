@@ -28,20 +28,22 @@ installed on Windows and Linux:
 
 ## 📥 Downloads
 
-Every [**release**](https://github.com/retrogc/retrogc-installer/releases/latest) is named after the
-RetroArch version it ships (e.g. `1.22.2`) and contains:
+There are two kinds of [**releases**](https://github.com/retrogc/retrogc-installer/releases):
 
-| File | What it is |
-|---|---|
-| 💳 `retrogc-installer-<version>.img.xz` | **Installer card** image (exFAT, labelled `RETROGC`, ≈ 1.5 GB): both launchers + both data packages |
-| 🪟 `retrogc-data-<version>-windows.zip` | RetroArch + cores for Windows x64 |
-| 🐧 `retrogc-data-<version>-linux.zip` | RetroArch + cores for Linux x64 |
+| Release | Tag | File | What it is |
+|---|---|---|---|
+| 💳 **Installer card** (*Latest*) | launcher version, e.g. `v1.0.7` | `retrogc-installer-<launcher version>.img.xz` | **Installer card** image (exFAT, labelled `RETROGC`, ≈ 1.5 GB): both launchers + both data packages |
+| 📦 **RetroArch data** | RetroArch version, e.g. `1.22.2` | `retrogc-data-<version>-windows.zip` | RetroArch + cores for Windows x64 |
+| | | `retrogc-data-<version>-linux.zip` | RetroArch + cores for Linux x64 |
+
+A new installer card comes out with every launcher release. The data packages only change with a
+new RetroArch version.
 
 ## 🚀 Using the installer card
 
 The simplest way to set up a computer:
 
-1. **Download** `retrogc-installer-<version>.img.xz` from the
+1. **Download** `retrogc-installer-<launcher version>.img.xz` from the
    [latest release](https://github.com/retrogc/retrogc-installer/releases/latest).
 2. **Flash** it to a USB stick of **2 GB or more** with [**balenaEtcher**](https://etcher.balena.io/)
    (Windows, Linux, macOS), or with
@@ -105,21 +107,35 @@ installer (<kbd>F12</kbd> → **RetroArch data package** → **Install…** → 
 
 ## 🛠️ Making a release
 
-Releases are built by the [**Build Release**](.github/workflows/release.yml) workflow
-(*Actions → Build Release → Run workflow*), given a RetroArch version such as `1.22.2`. It:
+### 💳 Installer card: [**Build Installer**](.github/workflows/installer.yml)
 
-1. downloads RetroArch and its cores for Linux and Windows from the
-   [libretro buildbot](https://buildbot.libretro.com/stable/) and packs them as
-   `retrogc-data-<version>-{linux,windows}.zip`;
+Runs **automatically after every launcher release** (the launcher's release workflow starts it), or
+by hand (*Actions → Build Installer → Run workflow*) with a launcher version such as `1.0.7`. It:
+
+1. downloads that launcher release (Linux and Windows);
 2. builds the installer card with
    [`retrogc-image.sh --build-installer`](https://github.com/retrogc/retrogc-launcher#%EF%B8%8F-building-your-own-installer-card-optional),
-   using these two zips and the **latest launcher release**;
-3. publishes the GitHub release `retrogc-installer v<version>` (tag `<version>`) with the three files.
+   with the `default` data version of [`retrogc-data.rgc`](retrogc-data.rgc), downloaded from its
+   data release (nothing is rebuilt or uploaded again);
+3. publishes the release `retrogc-installer v<launcher version>` (tag `v<launcher version>`, *Latest*)
+   with the card image only.
+
+> [!NOTE]
+> The automatic run needs the `INSTALLER_DISPATCH_TOKEN` secret in the **retrogc-launcher** repository:
+> a fine-grained token for `retrogc/retrogc-installer` with the *Actions: Read and write* permission.
+> Without it the launcher release still works, run *Build Installer* by hand.
+
+### 📦 RetroArch data: [**Build Data**](.github/workflows/data.yml)
+
+Only for a new RetroArch version (*Actions → Build Data → Run workflow*, e.g. `1.22.2`). It downloads
+RetroArch and its cores for Linux and Windows from the
+[libretro buildbot](https://buildbot.libretro.com/stable/), packs them as
+`retrogc-data-<version>-{linux,windows}.zip` and publishes them as the release `RetroArch data <version>`
+(tag `<version>`).
 
 > [!IMPORTANT]
 > The workflow doesn't touch [`retrogc-data.rgc`](retrogc-data.rgc). Once the release is out, add the
-> new version to `versions` and set `default` to it, so the launcher's online install picks it up.
-
-> [!NOTE]
-> The installer card bundles the launcher release that was the latest **when the workflow ran**.
-> After a new launcher release, run the workflow again to refresh the card.
+> new version to `versions` and set `default` to it: the launcher's online install picks it up, and
+> the next installer card uses it (run *Build Installer* again to refresh the current one).
+>
+> Keep the data releases: the manifest's `url`s point to them.
